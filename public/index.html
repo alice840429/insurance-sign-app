@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>福斯保經 — 線上簽署管理後台</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="logo">VOLKSWAGEN <small>INSURANCE BROKERS</small></div>
+      <h1>福斯保經 — 線上簽署管理後台</h1>
+      <p>上傳要保書圖片，自動帶入制式文件，快速建立客戶簽署連結。</p>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">上傳要保書並產生簽署連結</h2>
+      <div class="section-desc">制式文件（書面分析評估暨業務員報告書、瞭解要保人需求報告書、個人資料蒐集處理同意書）會自動加入。</div>
+
+      <label class="dropzone" for="fileInput">
+        <strong>點擊或拖曳圖片至此</strong>
+        <span>支援 JPG / PNG，可多選</span>
+        <input id="fileInput" type="file" accept="image/png,image/jpeg" multiple />
+      </label>
+
+      <ul id="fileList" class="file-list"></ul>
+
+      <div class="actions">
+        <button id="generateBtn" class="btn btn-primary">產生簽署連結</button>
+        <button id="resetBtn" class="btn btn-secondary">建立新案件</button>
+      </div>
+
+      <div id="result" class="result">
+        <div class="success" style="display:block;">簽署連結已產生！將下方連結傳送給客戶。</div>
+
+        <div class="link-box">
+          <div><strong>客戶簽名連結（傳給客戶）</strong></div>
+          <div class="link-row">
+            <input id="signerUrl" readonly />
+            <button class="btn btn-secondary" data-copy="signerUrl">複製</button>
+            <a id="signerOpen" class="btn btn-secondary" target="_blank">開啟</a>
+          </div>
+        </div>
+
+        <div class="link-box">
+          <div><strong>業務下載連結（客戶簽完名後，用此下載 PDF）</strong></div>
+          <div class="link-row">
+            <input id="downloadUrl" readonly />
+            <button class="btn btn-secondary" data-copy="downloadUrl">複製</button>
+            <a id="downloadOpen" class="btn btn-secondary" target="_blank">下載</a>
+          </div>
+        </div>
+
+        <div class="notice">下載 PDF 後，若你想做自動清除，可再加上排程刪檔功能。</div>
+      </div>
+    </div>
+
+    <div class="templates">
+      <div class="template-card"><img src="/assets/pdpa.jpg" alt="個資法同意書"><div>個資法同意書</div></div>
+      <div class="template-card"><img src="/assets/analysis-1.jpg" alt="書面分析 1"><div>書面分析報告書（1）</div></div>
+      <div class="template-card"><img src="/assets/analysis-2.jpg" alt="書面分析 2"><div>書面分析報告書（2）</div></div>
+      <div class="template-card"><img src="/assets/solicitation.jpg" alt="招攬報告書"><div>招攬報告書</div></div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const generateBtn = document.getElementById('generateBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const result = document.getElementById('result');
+    const signerUrl = document.getElementById('signerUrl');
+    const downloadUrl = document.getElementById('downloadUrl');
+    const signerOpen = document.getElementById('signerOpen');
+    const downloadOpen = document.getElementById('downloadOpen');
+
+    function renderFiles() {
+      fileList.innerHTML = '';
+      [...fileInput.files].forEach(file => {
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        fileList.appendChild(li);
+      });
+    }
+
+    fileInput.addEventListener('change', renderFiles);
+
+    generateBtn.addEventListener('click', async () => {
+      const formData = new FormData();
+      [...fileInput.files].forEach(file => formData.append('uploadedForms', file));
+      generateBtn.disabled = true;
+      generateBtn.textContent = '產生中...';
+
+      try {
+        const res = await fetch('/api/cases', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || '建立失敗');
+        signerUrl.value = data.signerUrl;
+        downloadUrl.value = data.downloadUrl;
+        signerOpen.href = data.signerUrl;
+        downloadOpen.href = data.downloadUrl;
+        result.style.display = 'block';
+      } catch (err) {
+        alert(err.message || '建立失敗');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = '產生簽署連結';
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      fileList.innerHTML = '';
+      result.style.display = 'none';
+    });
+
+    document.querySelectorAll('[data-copy]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const target = document.getElementById(btn.dataset.copy);
+        await navigator.clipboard.writeText(target.value);
+        btn.textContent = '已複製';
+        setTimeout(() => btn.textContent = '複製', 1200);
+      });
+    });
+  </script>
+</body>
+</html>

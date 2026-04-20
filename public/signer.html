@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>客戶簽署頁</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+  <div class="signer-wrap">
+    <div class="hero" style="margin-bottom:18px;">
+      <div class="logo">VOLKSWAGEN <small>INSURANCE BROKERS</small></div>
+      <h1>客戶簽署頁</h1>
+      <p>請於每一頁下方簽名，完成後送出。</p>
+    </div>
+
+    <div class="status-bar" id="statusBar">讀取案件中...</div>
+    <div class="name-row">
+      <input id="signerName" placeholder="請輸入簽署人姓名" />
+      <button id="submitBtn" class="btn btn-primary">完成簽署並產生 PDF</button>
+    </div>
+    <div id="successBox" class="success"></div>
+    <div id="pages"></div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const caseId = params.get('case');
+    const statusBar = document.getElementById('statusBar');
+    const pagesWrap = document.getElementById('pages');
+    const submitBtn = document.getElementById('submitBtn');
+    const successBox = document.getElementById('successBox');
+    const signerName = document.getElementById('signerName');
+    const pads = [];
+
+    function resizeCanvas(canvas) {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      canvas.getContext('2d').scale(ratio, ratio);
+    }
+
+    async function loadCase() {
+      const res = await fetch(`/api/cases/${caseId}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message || '載入失敗');
+      statusBar.textContent = `共 ${data.pages.length} 頁文件，請逐頁簽名。`;
+
+      data.pages.forEach((page, index) => {
+        const card = document.createElement('div');
+        card.className = 'page-card';
+        card.innerHTML = `
+          <div><strong>${index + 1}. ${page.title}</strong></div>
+          <img src="${page.imageUrl}" alt="${page.title}" />
+          <div class="signature-box">
+            <canvas></canvas>
+            <div class="signature-tools">
+              <span class="muted">請在此簽名</span>
+              <button class="btn btn-secondary" type="button">清除</button>
+            </div>
+          </div>
+        `;
+        pagesWrap.appendChild(card);
+        const canvas = card.querySelector('canvas');
+        resizeCanvas(canvas);
+        const pad = new SignaturePad(canvas, { minWidth: 1, maxWidth: 2.5 });
+        card.querySelector('button').addEventListener('click', () => pad.clear());
+        pads.push(pad);
+      });
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const signatures = pads.map(pad => ({ dataUrl: pad.isEmpty() ? null : pad.toDataURL('image/png') }));
+      if (signatures.every(x => !x.dataUrl)) {
+        alert('請至少簽一個簽名');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = '處理中...';
+      try {
+        const res = await fetch(`/api/cases/${caseId}/sign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signerName: signerName.value, signatures })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || '送出失敗');
+        successBox.style.display = 'block';
+        successBox.innerHTML = `簽署完成，<a href="${data.downloadUrl}" target="_blank">點這裡下載 PDF</a>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        alert(err.message || '送出失敗');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '完成簽署並產生 PDF';
+      }
+    });
+
+    loadCase().catch(err => { statusBar.textContent = err.message; });
+    window.addEventListener('resize', () => document.querySelectorAll('canvas').forEach(resizeCanvas));
+  </script>
+</body>
+</html>
