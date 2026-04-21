@@ -3,22 +3,257 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>福斯保經 — 業務後台</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <title>福斯保經 — 線上簽署管理後台</title>
   <style>
-    .fig1-dropzone.dragover {
-      border-color: #7da5c2;
-      background: #eef5fb;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+        "Microsoft JhengHei", sans-serif;
+      background: #f3f5f7;
+      color: #1f2937;
     }
-    .fig1-dropzone input {
+
+    .topbar {
+      background: #1f5d8f;
+      color: #fff;
+      padding: 18px 24px;
+    }
+
+    .topbar-inner {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-main {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-sub {
+      margin-top: 4px;
+      font-size: 13px;
+      opacity: 0.95;
+    }
+
+    .staff-chip {
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .page {
+      max-width: 930px;
+      margin: 34px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 28px 30px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    .title {
+      margin: 0 0 20px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #16324f;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .success-banner {
+      background: #e9f5eb;
+      color: #2f7d48;
+      border: 1px solid #b7ddb9;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .field-label {
+      font-size: 14px;
+      color: #4b5563;
+      margin-bottom: 10px;
+    }
+
+    .dropzone {
+      border: 2px dashed #cfd4da;
+      border-radius: 14px;
+      min-height: 188px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      cursor: pointer;
+      background: #fff;
+      transition: 0.18s ease;
+      user-select: none;
+      padding: 18px;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: #8eb0c9;
+      background: #f7fbff;
+    }
+
+    .dropzone-icon {
+      font-size: 44px;
+      line-height: 1;
+      margin-bottom: 10px;
+      color: #6b7280;
+    }
+
+    .dropzone-main {
+      font-size: 16px;
+      font-weight: 700;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+
+    .dropzone-sub {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .dropzone input {
       display: none;
+    }
+
+    .file-list {
+      list-style: none;
+      padding: 0;
+      margin: 14px 0 0;
+    }
+
+    .file-list li {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .bottom-actions {
+      margin-top: 18px;
+    }
+
+    .generate-btn {
+      background: #6c8ea4;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .generate-btn:hover {
+      filter: brightness(0.97);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    .result-panel {
+      display: none;
+      margin-top: 22px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 20px;
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: #16324f;
+    }
+
+    .result-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .result-label {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #374151;
+    }
+
+    .result-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-row input {
+      flex: 1 1 340px;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .mini-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .topbar-inner {
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .brand-main {
+        font-size: 16px;
+      }
+      .card {
+        padding: 20px;
+      }
     }
   </style>
 </head>
-<body class="dashboard-body fig1-body">
-  <header class="fig1-topbar">
-    <div class="fig1-topbar-inner">
-      <div class="brand-block">
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
         <div class="brand-main">VOLKSWAGEN INSURANCE BROKERS</div>
         <div class="brand-sub">福斯保經 — 線上簽署管理後台</div>
       </div>
@@ -26,38 +261,38 @@
     </div>
   </header>
 
-  <main class="fig1-main-wrap">
-    <section class="fig1-upload-card">
-      <h1 class="fig1-upload-title">📄 上傳要保書並產生簽署連結</h1>
+  <main class="page">
+    <section class="card">
+      <h1 class="title">📄 上傳要保書並產生簽署連結</h1>
 
-      <div class="success-banner always-show fig1-success-banner">
+      <div class="success-banner">
         ✅ 福斯保經制式文件（書面分析評估暨業務員報告書、瞭解要保人需求報告書、個人資料蒐集處理同意書）已自動加入，簽名區也已預設完成。
       </div>
 
-      <div class="field-label fig1-field-label">上傳要保書圖片（ JPG / PNG ），可多選：</div>
+      <div class="field-label">上傳要保書圖片（ JPG / PNG ），可多選：</div>
 
-      <label class="big-dropzone fig1-dropzone" id="dropzone" for="fileInput">
-        <div class="dropzone-icon fig1-dropzone-icon">📄</div>
-        <div class="dropzone-main fig1-dropzone-main">點擊或拖曳圖片至此</div>
-        <div class="dropzone-sub fig1-dropzone-sub">支援 JPG / PNG・可多選</div>
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <div class="dropzone-icon">📄</div>
+        <div class="dropzone-main">點擊或拖曳圖片至此</div>
+        <div class="dropzone-sub">支援 JPG / PNG・可多選</div>
         <input id="fileInput" type="file" accept="image/png,image/jpeg" multiple />
       </label>
 
-      <ul id="fileList" class="file-list compact"></ul>
+      <ul id="fileList" class="file-list"></ul>
 
-      <div class="bottom-actions fig1-bottom-actions">
-        <button id="generateBtn" class="primary-generate-btn fig1-generate-btn">✅ 產生簽署連結</button>
+      <div class="bottom-actions">
+        <button id="generateBtn" class="generate-btn">✅ 產生簽署連結</button>
       </div>
 
-      <div id="result" class="result-panel fig1-result-panel">
+      <div id="result" class="result-panel">
         <div class="result-title">簽署連結已建立</div>
 
         <div class="result-box">
           <div class="result-label">客戶簽名連結（傳給客戶）</div>
           <div class="result-row">
             <input id="signerUrl" readonly />
-            <button class="mini-btn" data-copy="signerUrl">複製</button>
-            <a id="signerOpen" class="mini-btn" target="_blank">開啟</a>
+            <button class="mini-btn" data-copy="signerUrl" type="button">複製</button>
+            <a id="signerOpen" class="mini-btn" target="_blank" rel="noopener">開啟</a>
           </div>
         </div>
 
@@ -65,8 +300,8 @@
           <div class="result-label">業務下載連結（客戶簽完後下載 PDF）</div>
           <div class="result-row">
             <input id="downloadUrl" readonly />
-            <button class="mini-btn" data-copy="downloadUrl">複製</button>
-            <a id="downloadOpen" class="mini-btn" target="_blank">下載</a>
+            <button class="mini-btn" data-copy="downloadUrl" type="button">複製</button>
+            <a id="downloadOpen" class="mini-btn" target="_blank" rel="noopener">下載</a>
           </div>
         </div>
       </div>
@@ -87,8 +322,6 @@
     function renderFiles() {
       fileList.innerHTML = '';
       const files = [...fileInput.files];
-      if (!files.length) return;
-
       files.forEach(file => {
         const li = document.createElement('li');
         li.textContent = file.name;
@@ -155,10 +388,14 @@
     document.querySelectorAll('[data-copy]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const target = document.getElementById(btn.dataset.copy);
-        await navigator.clipboard.writeText(target.value);
-        const original = btn.textContent;
-        btn.textContent = '已複製';
-        setTimeout(() => btn.textContent = original, 1200);
+        try {
+          await navigator.clipboard.writeText(target.value);
+          const original = btn.textContent;
+          btn.textContent = '已複製';
+          setTimeout(() => btn.textContent = original, 1200);
+        } catch {
+          alert('複製失敗，請手動複製');
+        }
       });
     });
   </script>
