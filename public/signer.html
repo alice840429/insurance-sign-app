@@ -121,7 +121,7 @@
       flex-wrap: wrap;
     }
     .sign-btn {
-      background: #e74c3c;
+      background: #e1604b;
       color: #fff;
       border: none;
       border-radius: 14px;
@@ -129,7 +129,7 @@
       font-size: 18px;
       font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 3px 8px rgba(231,76,60,0.18);
+      box-shadow: 0 3px 8px rgba(231,96,75,0.18);
     }
     .signed-ok {
       color: #30a85a;
@@ -169,7 +169,7 @@
       border: none;
       border-radius: 16px;
       padding: 18px 24px;
-      background: linear-gradient(180deg, #31d96b, #22c55e);
+      background: linear-gradient(180deg, #66d17a, #58c86d);
       color: #fff;
       font-size: 22px;
       font-weight: 900;
@@ -443,6 +443,10 @@
       insuredBirthD.disabled = same;
       signInsuredBtn.disabled = same;
       signInsuredBtn.style.opacity = same ? '0.5' : '1';
+      if (same) {
+        insuredStatus.style.display = applicantSignature ? 'block' : 'none';
+      }
+      refreshDoneHint();
     }
 
     sameAsApplicant.addEventListener('change', updateInsuredDisabled);
@@ -540,6 +544,9 @@
       if (activeSignTarget === 'applicant') {
         applicantSignature = dataUrl;
         applicantStatus.style.display = 'block';
+        if (sameAsApplicant.checked) {
+          insuredStatus.style.display = 'block';
+        }
       } else {
         insuredSignature = dataUrl;
         insuredStatus.style.display = 'block';
@@ -580,10 +587,6 @@
         alert('請先完成要保人簽名');
         return;
       }
-      if (!sameAsApplicant.checked && !insuredSignature) {
-        alert('請完成被保人簽名');
-        return;
-      }
 
       const payload = {
         signerName: signerName.value.trim(),
@@ -611,6 +614,11 @@
         }
       };
 
+      if (!payload.insured.signature) {
+        alert('請完成被保人簽名');
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = '送出中...';
 
@@ -621,6 +629,7 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
+
         if (!data.ok) throw new Error(data.message || '送出失敗');
 
         alert('簽署完成，PDF 已產生');
