@@ -74,7 +74,7 @@ function getImageBytesAndType(filePath) {
   };
 }
 
-function drawTextTop(page, text, x, yTop, font, size = 18, color = rgb(0.1, 0.1, 0.1)) {
+function drawTextTop(page, text, x, yTop, font, size = 16, color = rgb(0.1, 0.1, 0.1)) {
   if (!text) return;
   const y = page.getHeight() - yTop - size;
   page.drawText(String(text), { x, y, size, font, color });
@@ -136,17 +136,12 @@ function stampTemplatePage({
 
   // 1. 個資法同意書
   if (file === 'assets/pdpa.jpg') {
-    // 要保人簽名線
     drawImageTop(page, applicantSignImage, 360, 1552, 92, 28);
-    // 被保人簽名線
     drawImageTop(page, insuredSignImage, 1010, 1552, 92, 28);
 
-    // 要保人身分證
     drawTextTop(page, applicantId, 290, 1624, font, 16);
-    // 被保人身分證
     drawTextTop(page, insuredId, 935, 1624, font, 16);
 
-    // 日期：中華民國 年 月 日
     drawTextTop(page, rocYear, 250, 1848, font, 16);
     drawTextTop(page, month, 900, 1848, font, 16);
     drawTextTop(page, day, 1160, 1848, font, 16);
@@ -155,29 +150,22 @@ function stampTemplatePage({
 
   // 2. 書面分析報告書（第 1 頁）
   if (file === 'assets/analysis-1.jpg') {
-    // 姓名
     drawTextTop(page, applicantName, 170, 390, font, 16);
     drawTextTop(page, insuredName, 835, 390, font, 16);
 
-    // 生日
     drawTextTop(page, applicantBirth, 170, 507, font, 16);
     drawTextTop(page, insuredBirth, 835, 507, font, 16);
 
-    // 身分證字號/統編
     drawTextTop(page, applicantId, 170, 625, font, 16);
     drawTextTop(page, insuredId, 835, 625, font, 16);
-
     return;
   }
 
   // 3. 書面分析報告書（第 2 頁）
   if (file === 'assets/analysis-2.jpg') {
-    // 要保人簽名線
     drawImageTop(page, applicantSignImage, 200, 1375, 88, 28);
-    // 被保人簽名線
     drawImageTop(page, insuredSignImage, 845, 1375, 88, 28);
 
-    // 日期：中華民國 年 月 日
     drawTextTop(page, rocYear, 90, 1892, font, 16);
     drawTextTop(page, month, 640, 1892, font, 16);
     drawTextTop(page, day, 1085, 1892, font, 16);
@@ -186,22 +174,17 @@ function stampTemplatePage({
 
   // 4. 招攬報告書
   if (file === 'assets/solicitation.jpg') {
-    // 上方姓名
     drawTextTop(page, applicantName, 215, 152, font, 16);
     drawTextTop(page, insuredName, 820, 152, font, 16);
 
-    // 下方簽名線
     drawImageTop(page, applicantSignImage, 360, 1812, 95, 30);
     drawImageTop(page, insuredSignImage, 1045, 1812, 95, 30);
 
-    // 日期：中華民國 年 月 日
     drawTextTop(page, rocYear, 235, 1962, font, 16);
     drawTextTop(page, month, 700, 1962, font, 16);
     drawTextTop(page, day, 1140, 1962, font, 16);
     return;
   }
-
-  // 其他上傳文件先不自動蓋
 }
 
 app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
@@ -335,10 +318,7 @@ app.post('/api/cases/:id/sign', async (req, res) => {
 
     item.status = 'signed';
     item.signerName = signerName;
-    item.signData = {
-      applicant,
-      insured
-    };
+    item.signData = { applicant, insured };
     item.pdfPath = `output/${pdfName}`;
     saveCases(cases);
 
