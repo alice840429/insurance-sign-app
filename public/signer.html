@@ -4,101 +4,638 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>客戶簽署頁</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+        "Microsoft JhengHei", sans-serif;
+      background: #f3f5f7;
+      color: #1f2937;
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+    .logo {
+      text-align: center;
+      color: #314b67;
+      margin-bottom: 8px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-size: 18px;
+    }
+    .logo-sub {
+      text-align: center;
+      color: #314b67;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    .title {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      color: #1e293b;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 28px;
+    }
+    .top-note {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .name-row {
+      display: grid;
+      grid-template-columns: 1fr 185px;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .input, .select {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      background: #fff;
+      padding: 14px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+    .primary-btn {
+      border: none;
+      border-radius: 14px;
+      background: #1565d8;
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 14px 18px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(15,23,42,0.04);
+    }
+    .doc-preview {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #dbe2ea;
+      background: #f8fafc;
+      margin: 10px 0 22px;
+      max-height: 280px;
+      object-fit: contain;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 20px;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .field-label {
+      font-size: 15px;
+      color: #4b5563;
+      font-weight: 700;
+    }
+    .sig-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .sign-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 34px;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(231,76,60,0.18);
+    }
+    .signed-ok {
+      color: #30a85a;
+      font-weight: 900;
+      font-size: 18px;
+    }
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .date-row .select {
+      width: 126px;
+    }
+    .same-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 20px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #1e3a5f;
+    }
+    .same-row input {
+      width: 22px;
+      height: 22px;
+    }
+    .muted {
+      opacity: 0.45;
+    }
+    .submit-wrap {
+      margin-top: 26px;
+    }
+    .submit-btn {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 18px 24px;
+      background: linear-gradient(180deg, #31d96b, #22c55e);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(34,197,94,0.2);
+    }
+    .success-box {
+      display: none;
+      margin-bottom: 18px;
+      background: #eef8e8;
+      border: 1px solid #b9de9a;
+      color: #4b9d19;
+      border-radius: 16px;
+      padding: 18px 20px;
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .sign-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .sign-panel {
+      width: min(760px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .sign-panel h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    .canvas-wrap {
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    canvas {
+      width: 100%;
+      height: 260px;
+      display: block;
+      background: #fff;
+      touch-action: none;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .ghost-btn {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .save-btn {
+      border: none;
+      background: #1565d8;
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    @media (max-width: 720px) {
+      .name-row, .field-row {
+        grid-template-columns: 1fr;
+      }
+      .date-row .select {
+        width: 100px;
+      }
+      .title {
+        font-size: 22px;
+      }
+      .sign-btn {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="signer-wrap">
-    <div class="hero" style="margin-bottom:18px;">
-      <div class="logo">VOLKSWAGEN <small>INSURANCE BROKERS</small></div>
-      <h1>客戶簽署頁</h1>
-      <p>請於每一頁下方簽名，完成後送出。</p>
+  <div class="wrap">
+    <div class="logo">VOLKSWAGEN</div>
+    <div class="logo-sub">INSURANCE BROKERS</div>
+    <div class="title">客戶簽署頁</div>
+    <div class="subtitle">請完成一次簽名與基本資料，系統會自動帶入所有文件。</div>
+
+    <div id="doneBanner" class="success-box">✅ 所有簽名已完成，請按下方「確認送出簽名」</div>
+
+    <div class="top-note" id="docCountText">載入中...</div>
+
+    <div class="name-row">
+      <input id="signerName" class="input" placeholder="請輸入簽署人姓名" />
+      <button id="goBottomBtn" class="primary-btn" type="button">完成簽署並產生 PDF</button>
     </div>
 
-    <div class="status-bar" id="statusBar">讀取案件中...</div>
-    <div class="name-row">
-      <input id="signerName" placeholder="請輸入簽署人姓名" />
-      <button id="submitBtn" class="btn btn-primary">完成簽署並產生 PDF</button>
+    <div class="card">
+      <div style="font-size:18px;font-weight:900;margin-bottom:10px;">第 1 頁</div>
+      <img id="firstDocPreview" class="doc-preview" alt="文件預覽" />
+
+      <div class="section-title">📝 簽署資訊</div>
+
+      <div class="field-row">
+        <div class="field-label">要保人簽名：</div>
+        <div class="sig-row">
+          <button id="signApplicantBtn" class="sign-btn" type="button">點擊簽名</button>
+          <div id="applicantStatus" class="signed-ok" style="display:none;">✓ 已簽名</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">要保人身分證號：</div>
+        <input id="applicantIdno" class="input" placeholder="請輸入身分證字號" />
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">要保人出生日期：</div>
+        <div class="date-row">
+          <select id="applicantBirthY" class="select"></select><span>年</span>
+          <select id="applicantBirthM" class="select"></select><span>月</span>
+          <select id="applicantBirthD" class="select"></select><span>日</span>
+        </div>
+      </div>
+
+      <div class="same-row">
+        <span style="color:#123c7a;">被保人</span>
+        <input id="sameAsApplicant" type="checkbox" checked />
+        <label for="sameAsApplicant">與要保人相同</label>
+      </div>
+
+      <div id="insuredFields" class="muted">
+        <div class="field-row">
+          <div class="field-label">被保人簽名：</div>
+          <div class="sig-row">
+            <button id="signInsuredBtn" class="sign-btn" type="button">點擊簽名</button>
+            <div id="insuredStatus" class="signed-ok" style="display:none;">✓ 已簽名</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">被保人身分證號：</div>
+          <input id="insuredIdno" class="input" placeholder="請輸入身分證字號" />
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">被保人出生日期：</div>
+          <div class="date-row">
+            <select id="insuredBirthY" class="select"></select><span>年</span>
+            <select id="insuredBirthM" class="select"></select><span>月</span>
+            <select id="insuredBirthD" class="select"></select><span>日</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-wrap">
+        <button id="submitBtn" class="submit-btn" type="button">✅ 確認送出簽名</button>
+      </div>
     </div>
-    <div id="successBox" class="success"></div>
-    <div id="pages"></div>
+  </div>
+
+  <div id="signModal" class="sign-modal">
+    <div class="sign-panel">
+      <h3 id="modalTitle">請簽名</h3>
+      <div class="canvas-wrap">
+        <canvas id="signCanvas"></canvas>
+      </div>
+      <div class="modal-actions">
+        <button id="clearCanvasBtn" class="ghost-btn" type="button">清除</button>
+        <button id="closeModalBtn" class="ghost-btn" type="button">取消</button>
+        <button id="saveSignBtn" class="save-btn" type="button">儲存簽名</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const params = new URLSearchParams(location.search);
-    const caseId = params.get('case');
-    const statusBar = document.getElementById('statusBar');
-    const pagesWrap = document.getElementById('pages');
-    const submitBtn = document.getElementById('submitBtn');
-    const successBox = document.getElementById('successBox');
-    const signerName = document.getElementById('signerName');
-    const pads = [];
+    const qs = new URLSearchParams(location.search);
+    const caseId = qs.get('case');
 
-    function resizeCanvas(canvas) {
-      const ratio = Math.max(window.devicePixelRatio || 1, 1);
-      canvas.width = canvas.offsetWidth * ratio;
-      canvas.height = canvas.offsetHeight * ratio;
-      canvas.getContext('2d').scale(ratio, ratio);
+    const docCountText = document.getElementById('docCountText');
+    const firstDocPreview = document.getElementById('firstDocPreview');
+    const signerName = document.getElementById('signerName');
+
+    const applicantIdno = document.getElementById('applicantIdno');
+    const applicantBirthY = document.getElementById('applicantBirthY');
+    const applicantBirthM = document.getElementById('applicantBirthM');
+    const applicantBirthD = document.getElementById('applicantBirthD');
+
+    const sameAsApplicant = document.getElementById('sameAsApplicant');
+    const insuredFields = document.getElementById('insuredFields');
+    const insuredIdno = document.getElementById('insuredIdno');
+    const insuredBirthY = document.getElementById('insuredBirthY');
+    const insuredBirthM = document.getElementById('insuredBirthM');
+    const insuredBirthD = document.getElementById('insuredBirthD');
+
+    const applicantStatus = document.getElementById('applicantStatus');
+    const insuredStatus = document.getElementById('insuredStatus');
+    const doneBanner = document.getElementById('doneBanner');
+
+    const signApplicantBtn = document.getElementById('signApplicantBtn');
+    const signInsuredBtn = document.getElementById('signInsuredBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const goBottomBtn = document.getElementById('goBottomBtn');
+
+    const signModal = document.getElementById('signModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const signCanvas = document.getElementById('signCanvas');
+    const clearCanvasBtn = document.getElementById('clearCanvasBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const saveSignBtn = document.getElementById('saveSignBtn');
+
+    const ctx = signCanvas.getContext('2d');
+
+    let caseData = null;
+    let activeSignTarget = 'applicant';
+    let applicantSignature = '';
+    let insuredSignature = '';
+
+    function populateDateSelects(y, m, d) {
+      y.innerHTML = '';
+      m.innerHTML = '';
+      d.innerHTML = '';
+
+      for (let year = 1940; year <= new Date().getFullYear(); year++) {
+        const opt = document.createElement('option');
+        opt.value = year;
+        opt.textContent = year;
+        y.appendChild(opt);
+      }
+      for (let month = 1; month <= 12; month++) {
+        const opt = document.createElement('option');
+        opt.value = month;
+        opt.textContent = month;
+        m.appendChild(opt);
+      }
+      for (let day = 1; day <= 31; day++) {
+        const opt = document.createElement('option');
+        opt.value = day;
+        opt.textContent = day;
+        d.appendChild(opt);
+      }
     }
 
-    async function loadCase() {
-      const res = await fetch(`/api/cases/${caseId}`);
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.message || '載入失敗');
-      statusBar.textContent = `共 ${data.pages.length} 頁文件，請逐頁簽名。`;
+    populateDateSelects(applicantBirthY, applicantBirthM, applicantBirthD);
+    populateDateSelects(insuredBirthY, insuredBirthM, insuredBirthD);
 
-      data.pages.forEach((page, index) => {
-        const card = document.createElement('div');
-        card.className = 'page-card';
-        card.innerHTML = `
-          <div><strong>${index + 1}. ${page.title}</strong></div>
-          <img src="${page.imageUrl}" alt="${page.title}" />
-          <div class="signature-box">
-            <canvas></canvas>
-            <div class="signature-tools">
-              <span class="muted">請在此簽名</span>
-              <button class="btn btn-secondary" type="button">清除</button>
-            </div>
-          </div>
-        `;
-        pagesWrap.appendChild(card);
-        const canvas = card.querySelector('canvas');
-        resizeCanvas(canvas);
-        const pad = new SignaturePad(canvas, { minWidth: 1, maxWidth: 2.5 });
-        card.querySelector('button').addEventListener('click', () => pad.clear());
-        pads.push(pad);
+    function setTodayDefaults(y, m, d) {
+      const now = new Date();
+      y.value = now.getFullYear();
+      m.value = now.getMonth() + 1;
+      d.value = now.getDate();
+    }
+    setTodayDefaults(applicantBirthY, applicantBirthM, applicantBirthD);
+    setTodayDefaults(insuredBirthY, insuredBirthM, insuredBirthD);
+
+    function updateInsuredDisabled() {
+      const same = sameAsApplicant.checked;
+      insuredFields.classList.toggle('muted', same);
+      insuredIdno.disabled = same;
+      insuredBirthY.disabled = same;
+      insuredBirthM.disabled = same;
+      insuredBirthD.disabled = same;
+      signInsuredBtn.disabled = same;
+      signInsuredBtn.style.opacity = same ? '0.5' : '1';
+    }
+
+    sameAsApplicant.addEventListener('change', updateInsuredDisabled);
+    updateInsuredDisabled();
+
+    function resizeCanvas() {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const rect = signCanvas.getBoundingClientRect();
+      signCanvas.width = rect.width * ratio;
+      signCanvas.height = rect.height * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#111827';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, signCanvas.width, signCanvas.height);
+    }
+
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let hasStroke = false;
+
+    function getPos(e) {
+      const rect = signCanvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      hasStroke = true;
+      const pos = getPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function moveDraw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    signCanvas.addEventListener('mousedown', startDraw);
+    signCanvas.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+
+    signCanvas.addEventListener('touchstart', startDraw, { passive: true });
+    signCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+    window.addEventListener('touchend', endDraw);
+
+    function openModal(type) {
+      activeSignTarget = type;
+      modalTitle.textContent = type === 'applicant' ? '請簽 要保人簽名' : '請簽 被保人簽名';
+      signModal.style.display = 'flex';
+      requestAnimationFrame(() => {
+        resizeCanvas();
+        hasStroke = false;
       });
     }
 
-    submitBtn.addEventListener('click', async () => {
-      const signatures = pads.map(pad => ({ dataUrl: pad.isEmpty() ? null : pad.toDataURL('image/png') }));
-      if (signatures.every(x => !x.dataUrl)) {
-        alert('請至少簽一個簽名');
+    function closeModal() {
+      signModal.style.display = 'none';
+    }
+
+    signApplicantBtn.addEventListener('click', () => openModal('applicant'));
+    signInsuredBtn.addEventListener('click', () => openModal('insured'));
+
+    clearCanvasBtn.addEventListener('click', () => {
+      resizeCanvas();
+      hasStroke = false;
+    });
+
+    closeModalBtn.addEventListener('click', closeModal);
+
+    saveSignBtn.addEventListener('click', () => {
+      if (!hasStroke) {
+        alert('請先簽名');
         return;
       }
+      const dataUrl = signCanvas.toDataURL('image/png');
+      if (activeSignTarget === 'applicant') {
+        applicantSignature = dataUrl;
+        applicantStatus.style.display = 'block';
+      } else {
+        insuredSignature = dataUrl;
+        insuredStatus.style.display = 'block';
+      }
+      closeModal();
+      refreshDoneHint();
+    });
+
+    function refreshDoneHint() {
+      const ok = applicantSignature && (sameAsApplicant.checked || insuredSignature);
+      doneBanner.style.display = ok ? 'block' : 'none';
+    }
+
+    async function loadCase() {
+      const res = await fetch('/api/cases/' + caseId);
+      const data = await res.json();
+      if (!data.ok) {
+        alert(data.message || '案件載入失敗');
+        return;
+      }
+      caseData = data;
+      docCountText.textContent = `共 ${data.documents.length} 頁文件，請完成一次簽名與資料填寫。`;
+      if (data.documents[0]) {
+        firstDocPreview.src = data.documents[0].imageUrl;
+      }
+    }
+
+    goBottomBtn.addEventListener('click', () => {
+      document.getElementById('submitBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      if (!signerName.value.trim()) {
+        alert('請輸入簽署人姓名');
+        return;
+      }
+      if (!applicantSignature) {
+        alert('請先完成要保人簽名');
+        return;
+      }
+      if (!sameAsApplicant.checked && !insuredSignature) {
+        alert('請完成被保人簽名');
+        return;
+      }
+
+      const payload = {
+        signerName: signerName.value.trim(),
+        applicant: {
+          signature: applicantSignature,
+          idno: applicantIdno.value.trim(),
+          birthY: applicantBirthY.value,
+          birthM: applicantBirthM.value,
+          birthD: applicantBirthD.value
+        },
+        insured: sameAsApplicant.checked ? {
+          sameAsApplicant: true,
+          signature: applicantSignature,
+          idno: applicantIdno.value.trim(),
+          birthY: applicantBirthY.value,
+          birthM: applicantBirthM.value,
+          birthD: applicantBirthD.value
+        } : {
+          sameAsApplicant: false,
+          signature: insuredSignature,
+          idno: insuredIdno.value.trim(),
+          birthY: insuredBirthY.value,
+          birthM: insuredBirthM.value,
+          birthD: insuredBirthD.value
+        }
+      };
+
       submitBtn.disabled = true;
-      submitBtn.textContent = '處理中...';
+      submitBtn.textContent = '送出中...';
+
       try {
-        const res = await fetch(`/api/cases/${caseId}/sign`, {
+        const res = await fetch('/api/cases/' + caseId + '/sign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ signerName: signerName.value, signatures })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || '送出失敗');
-        successBox.style.display = 'block';
-        successBox.innerHTML = `簽署完成，<a href="${data.downloadUrl}" target="_blank">點這裡下載 PDF</a>`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        alert('簽署完成，PDF 已產生');
+        if (data.downloadUrl) {
+          location.href = data.downloadUrl;
+        }
       } catch (err) {
         alert(err.message || '送出失敗');
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = '完成簽署並產生 PDF';
+        submitBtn.textContent = '✅ 確認送出簽名';
       }
     });
 
-    loadCase().catch(err => { statusBar.textContent = err.message; });
-    window.addEventListener('resize', () => document.querySelectorAll('canvas').forEach(resizeCanvas));
+    loadCase();
   </script>
 </body>
 </html>
