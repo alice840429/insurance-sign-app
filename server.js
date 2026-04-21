@@ -26,10 +26,10 @@ if (!fs.existsSync(casesFile)) {
 }
 
 const templatePages = [
-  { file: 'assets/pdpa.jpg', title: '個資法同意書' },
-  { file: 'assets/analysis-1.jpg', title: '書面分析評估暨業務員報告書（第 1 頁）' },
-  { file: 'assets/analysis-2.jpg', title: '書面分析評估暨業務員報告書（第 2 頁）' },
-  { file: 'assets/solicitation.jpg', title: '瞭解要保人需求及適合度分析評估暨招攬人員報告書' }
+  { file: 'assets/pdpa.jpg', title: '個資法同意書', isTemplate: true },
+  { file: 'assets/analysis-1.jpg', title: '書面分析評估暨業務員報告書（第 1 頁）', isTemplate: true },
+  { file: 'assets/analysis-2.jpg', title: '書面分析評估暨業務員報告書（第 2 頁）', isTemplate: true },
+  { file: 'assets/solicitation.jpg', title: '瞭解要保人需求及適合度分析評估暨招攬人員報告書', isTemplate: true }
 ];
 
 app.use(express.json({ limit: '20mb' }));
@@ -74,9 +74,7 @@ function getImageBytesAndType(filePath) {
   };
 }
 
-// 以你提供的 JPG 尺寸為基準：1448 x 2048
-// 以下座標都用「左上角」為原點
-function drawTextTop(page, text, x, yTop, font, size = 22, color = rgb(0.1, 0.1, 0.1)) {
+function drawTextTop(page, text, x, yTop, font, size = 18, color = rgb(0.1, 0.1, 0.1)) {
   if (!text) return;
   const y = page.getHeight() - yTop - size;
   page.drawText(String(text), { x, y, size, font, color });
@@ -91,7 +89,7 @@ function drawImageTop(page, image, x, yTop, width, height) {
 function getTodayParts() {
   const now = new Date();
   return {
-    y: String(now.getFullYear() - 1911), // 民國年
+    y: String(now.getFullYear() - 1911),
     m: String(now.getMonth() + 1),
     d: String(now.getDate())
   };
@@ -105,6 +103,11 @@ function birthText(data = {}) {
   return `${y}/${m}/${d}`;
 }
 
+function getInsuredName(signerName, insured) {
+  if (insured?.sameAsApplicant) return signerName || '';
+  return insured?.name || signerName || '';
+}
+
 function stampTemplatePage({
   page,
   pageInfo,
@@ -115,82 +118,90 @@ function stampTemplatePage({
   applicantSignImage,
   insuredSignImage
 }) {
-  const today = getTodayParts();
   const file = pageInfo.file;
+  const today = getTodayParts();
 
   const applicantName = signerName || '';
-  const insuredName = insured?.sameAsApplicant ? applicantName : (insured?.name || '');
+  const insuredName = getInsuredName(signerName, insured);
+
+  const applicantId = applicant?.idno || '';
+  const insuredId = insured?.sameAsApplicant ? applicantId : (insured?.idno || '');
+
+  const applicantBirth = birthText(applicant);
+  const insuredBirth = insured?.sameAsApplicant ? applicantBirth : birthText(insured);
+
+  const rocYear = today.y;
+  const month = today.m;
+  const day = today.d;
 
   // 1. 個資法同意書
   if (file === 'assets/pdpa.jpg') {
-    // 要保人簽名
-    drawImageTop(page, applicantSignImage, 285, 1540, 220, 60);
-    // 被保人簽名
-    drawImageTop(page, insuredSignImage, 925, 1540, 220, 60);
+    // 要保人簽名線
+    drawImageTop(page, applicantSignImage, 360, 1552, 92, 28);
+    // 被保人簽名線
+    drawImageTop(page, insuredSignImage, 1010, 1552, 92, 28);
 
-    // 身分證號
-    drawTextTop(page, applicant?.idno || '', 290, 1618, font, 24);
-    drawTextTop(page, insured?.idno || '', 965, 1618, font, 24);
+    // 要保人身分證
+    drawTextTop(page, applicantId, 290, 1624, font, 16);
+    // 被保人身分證
+    drawTextTop(page, insuredId, 935, 1624, font, 16);
 
-    // 日期（民國年 / 月 / 日）
-    drawTextTop(page, today.y, 275, 1864, font, 24);
-    drawTextTop(page, today.m, 940, 1864, font, 24);
-    drawTextTop(page, today.d, 1195, 1864, font, 24);
-
+    // 日期：中華民國 年 月 日
+    drawTextTop(page, rocYear, 250, 1848, font, 16);
+    drawTextTop(page, month, 900, 1848, font, 16);
+    drawTextTop(page, day, 1160, 1848, font, 16);
     return;
   }
 
   // 2. 書面分析報告書（第 1 頁）
   if (file === 'assets/analysis-1.jpg') {
     // 姓名
-    drawTextTop(page, applicantName, 320, 392, font, 24);
-    drawTextTop(page, insuredName, 985, 392, font, 24);
+    drawTextTop(page, applicantName, 170, 390, font, 16);
+    drawTextTop(page, insuredName, 835, 390, font, 16);
 
     // 生日
-    drawTextTop(page, birthText(applicant), 320, 510, font, 24);
-    drawTextTop(page, birthText(insured), 985, 510, font, 24);
+    drawTextTop(page, applicantBirth, 170, 507, font, 16);
+    drawTextTop(page, insuredBirth, 835, 507, font, 16);
 
     // 身分證字號/統編
-    drawTextTop(page, applicant?.idno || '', 320, 628, font, 24);
-    drawTextTop(page, insured?.idno || '', 985, 628, font, 24);
+    drawTextTop(page, applicantId, 170, 625, font, 16);
+    drawTextTop(page, insuredId, 835, 625, font, 16);
 
     return;
   }
 
   // 3. 書面分析報告書（第 2 頁）
   if (file === 'assets/analysis-2.jpg') {
-    // 要保人簽名
-    drawImageTop(page, applicantSignImage, 235, 1378, 240, 64);
-    // 被保人簽名
-    drawImageTop(page, insuredSignImage, 875, 1378, 240, 64);
+    // 要保人簽名線
+    drawImageTop(page, applicantSignImage, 200, 1375, 88, 28);
+    // 被保人簽名線
+    drawImageTop(page, insuredSignImage, 845, 1375, 88, 28);
 
-    // 日期（民國年 / 月 / 日）
-    drawTextTop(page, today.y, 285, 1890, font, 24);
-    drawTextTop(page, today.m, 925, 1890, font, 24);
-    drawTextTop(page, today.d, 1220, 1890, font, 24);
-
+    // 日期：中華民國 年 月 日
+    drawTextTop(page, rocYear, 90, 1892, font, 16);
+    drawTextTop(page, month, 640, 1892, font, 16);
+    drawTextTop(page, day, 1085, 1892, font, 16);
     return;
   }
 
   // 4. 招攬報告書
   if (file === 'assets/solicitation.jpg') {
-    // 上方姓名線
-    drawTextTop(page, applicantName, 305, 155, font, 24);
-    drawTextTop(page, insuredName, 915, 155, font, 24);
+    // 上方姓名
+    drawTextTop(page, applicantName, 215, 152, font, 16);
+    drawTextTop(page, insuredName, 820, 152, font, 16);
 
-    // 下方簽名區（依你要求先放指定位置）
-    drawImageTop(page, applicantSignImage, 250, 1812, 210, 56);
-    drawImageTop(page, insuredSignImage, 930, 1812, 210, 56);
+    // 下方簽名線
+    drawImageTop(page, applicantSignImage, 360, 1812, 95, 30);
+    drawImageTop(page, insuredSignImage, 1045, 1812, 95, 30);
 
-    // 日期（民國年 / 月 / 日）
-    drawTextTop(page, today.y, 315, 1965, font, 24);
-    drawTextTop(page, today.m, 685, 1965, font, 24);
-    drawTextTop(page, today.d, 1205, 1965, font, 24);
-
+    // 日期：中華民國 年 月 日
+    drawTextTop(page, rocYear, 235, 1962, font, 16);
+    drawTextTop(page, month, 700, 1962, font, 16);
+    drawTextTop(page, day, 1140, 1962, font, 16);
     return;
   }
 
-  // 其他上傳文件：暫時不自動蓋
+  // 其他上傳文件先不自動蓋
 }
 
 app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
@@ -200,12 +211,17 @@ app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
     fileName: file.filename,
     originalName: file.originalname,
     relativeUrl: `uploads/${file.filename}`,
-    title: file.originalname
+    title: file.originalname,
+    isTemplate: false
   }));
 
   const pages = [
-    ...templatePages.map(p => ({ ...p, isTemplate: true })),
-    ...files.map(f => ({ file: f.relativeUrl, title: f.title, isTemplate: false }))
+    ...templatePages,
+    ...files.map(f => ({
+      file: f.relativeUrl,
+      title: f.title,
+      isTemplate: false
+    }))
   ];
 
   const cases = loadCases();
@@ -228,6 +244,7 @@ app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
     downloadUrl: `${base}/api/cases/${caseId}/download`
   });
 });
+
 app.get('/api/cases/:id', (req, res) => {
   const cases = loadCases();
   const item = cases[req.params.id];
@@ -246,6 +263,7 @@ app.get('/api/cases/:id', (req, res) => {
     }))
   });
 });
+
 app.post('/api/cases/:id/sign', async (req, res) => {
   try {
     const caseId = req.params.id;
