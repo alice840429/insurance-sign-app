@@ -59,11 +59,9 @@ function getBaseUrl(req) {
 }
 
 function resolvePagePath(relativeFile) {
-  // template: assets/xxx.jpg -> public/assets/xxx.jpg
   if (relativeFile.startsWith('assets/')) {
     return path.join(publicDir, relativeFile);
   }
-  // upload: uploads/xxx.jpg -> data/uploads/xxx.jpg
   return path.join(dataDir, relativeFile);
 }
 
@@ -76,6 +74,29 @@ function getImageBytesAndType(filePath) {
   };
 }
 
+// 以你提供的 JPG 尺寸為基準：1448 x 2048
+// 以下座標都用「左上角」為原點
+function drawTextTop(page, text, x, yTop, font, size = 22, color = rgb(0.1, 0.1, 0.1)) {
+  if (!text) return;
+  const y = page.getHeight() - yTop - size;
+  page.drawText(String(text), { x, y, size, font, color });
+}
+
+function drawImageTop(page, image, x, yTop, width, height) {
+  if (!image) return;
+  const y = page.getHeight() - yTop - height;
+  page.drawImage(image, { x, y, width, height });
+}
+
+function getTodayParts() {
+  const now = new Date();
+  return {
+    y: String(now.getFullYear() - 1911), // 民國年
+    m: String(now.getMonth() + 1),
+    d: String(now.getDate())
+  };
+}
+
 function birthText(data = {}) {
   const y = data.birthY || '';
   const m = data.birthM || '';
@@ -84,76 +105,92 @@ function birthText(data = {}) {
   return `${y}/${m}/${d}`;
 }
 
-// 簽名與文字的通用蓋章位置
-// 先做成可用版：每頁自動帶入同一組資料與簽名
-function drawStampBlock(page, font, pageWidth, applicant, insured) {
-  const marginX = 48;
-  const bottomY = 34;
+function stampTemplatePage({
+  page,
+  pageInfo,
+  font,
+  signerName,
+  applicant,
+  insured,
+  applicantSignImage,
+  insuredSignImage
+}) {
+  const today = getTodayParts();
+  const file = pageInfo.file;
 
-  const applicantIdno = applicant?.idno || '';
-  const applicantBirth = birthText(applicant);
-  const insuredIdno = insured?.idno || '';
-  const insuredBirth = birthText(insured);
+  const applicantName = signerName || '';
+  const insuredName = insured?.sameAsApplicant ? applicantName : (insured?.name || '');
 
-  page.drawText(`要保人身分證：${applicantIdno}`, {
-    x: marginX,
-    y: bottomY + 34,
-    size: 10,
-    font,
-    color: rgb(0.2, 0.2, 0.2)
-  });
+  // 1. 個資法同意書
+  if (file === 'assets/pdpa.jpg') {
+    // 要保人簽名
+    drawImageTop(page, applicantSignImage, 285, 1540, 220, 60);
+    // 被保人簽名
+    drawImageTop(page, insuredSignImage, 925, 1540, 220, 60);
 
-  page.drawText(`要保人生日：${applicantBirth}`, {
-    x: marginX,
-    y: bottomY + 20,
-    size: 10,
-    font,
-    color: rgb(0.2, 0.2, 0.2)
-  });
+    // 身分證號
+    drawTextTop(page, applicant?.idno || '', 290, 1618, font, 24);
+    drawTextTop(page, insured?.idno || '', 965, 1618, font, 24);
 
-  page.drawText(`被保人身分證：${insuredIdno}`, {
-    x: marginX + 220,
-    y: bottomY + 34,
-    size: 10,
-    font,
-    color: rgb(0.2, 0.2, 0.2)
-  });
+    // 日期（民國年 / 月 / 日）
+    drawTextTop(page, today.y, 275, 1864, font, 24);
+    drawTextTop(page, today.m, 940, 1864, font, 24);
+    drawTextTop(page, today.d, 1195, 1864, font, 24);
 
-  page.drawText(`被保人生日：${insuredBirth}`, {
-    x: marginX + 220,
-    y: bottomY + 20,
-    size: 10,
-    font,
-    color: rgb(0.2, 0.2, 0.2)
-  });
-
-  page.drawText(new Date().toLocaleString('zh-TW', { hour12: false }), {
-    x: marginX,
-    y: bottomY,
-    size: 9,
-    font,
-    color: rgb(0.35, 0.35, 0.35)
-  });
-
-  // applicant sign
-  if (applicant?.signature) {
-    page.drawImage(applicant.signature, {
-      x: pageWidth - 250,
-      y: 28,
-      width: 90,
-      height: 36
-    });
+    return;
   }
 
-  // insured sign
-  if (insured?.signature) {
-    page.drawImage(insured.signature, {
-      x: pageWidth - 140,
-      y: 28,
-      width: 90,
-      height: 36
-    });
+  // 2. 書面分析報告書（第 1 頁）
+  if (file === 'assets/analysis-1.jpg') {
+    // 姓名
+    drawTextTop(page, applicantName, 320, 392, font, 24);
+    drawTextTop(page, insuredName, 985, 392, font, 24);
+
+    // 生日
+    drawTextTop(page, birthText(applicant), 320, 510, font, 24);
+    drawTextTop(page, birthText(insured), 985, 510, font, 24);
+
+    // 身分證字號/統編
+    drawTextTop(page, applicant?.idno || '', 320, 628, font, 24);
+    drawTextTop(page, insured?.idno || '', 985, 628, font, 24);
+
+    return;
   }
+
+  // 3. 書面分析報告書（第 2 頁）
+  if (file === 'assets/analysis-2.jpg') {
+    // 要保人簽名
+    drawImageTop(page, applicantSignImage, 235, 1378, 240, 64);
+    // 被保人簽名
+    drawImageTop(page, insuredSignImage, 875, 1378, 240, 64);
+
+    // 日期（民國年 / 月 / 日）
+    drawTextTop(page, today.y, 285, 1890, font, 24);
+    drawTextTop(page, today.m, 925, 1890, font, 24);
+    drawTextTop(page, today.d, 1220, 1890, font, 24);
+
+    return;
+  }
+
+  // 4. 招攬報告書
+  if (file === 'assets/solicitation.jpg') {
+    // 上方姓名線
+    drawTextTop(page, applicantName, 305, 155, font, 24);
+    drawTextTop(page, insuredName, 915, 155, font, 24);
+
+    // 下方簽名區（依你要求先放指定位置）
+    drawImageTop(page, applicantSignImage, 250, 1812, 210, 56);
+    drawImageTop(page, insuredSignImage, 930, 1812, 210, 56);
+
+    // 日期（民國年 / 月 / 日）
+    drawTextTop(page, today.y, 315, 1965, font, 24);
+    drawTextTop(page, today.m, 685, 1965, font, 24);
+    drawTextTop(page, today.d, 1205, 1965, font, 24);
+
+    return;
+  }
+
+  // 其他上傳文件：暫時不自動蓋
 }
 
 app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
@@ -263,29 +300,16 @@ app.post('/api/cases/:id/sign', async (req, res) => {
       const page = pdfDoc.addPage([width, height]);
       page.drawImage(bgImage, { x: 0, y: 0, width, height });
 
-      drawStampBlock(
+      stampTemplatePage({
         page,
+        pageInfo,
         font,
-        width,
-        {
-          ...applicant,
-          signature: applicantSignImage
-        },
-        {
-          ...insured,
-          signature: insuredSignImage
-        }
-      );
-
-      if (signerName) {
-        page.drawText(`簽署人：${signerName}`, {
-          x: 48,
-          y: height - 24,
-          size: 10,
-          font,
-          color: rgb(0.15, 0.15, 0.15)
-        });
-      }
+        signerName,
+        applicant,
+        insured,
+        applicantSignImage,
+        insuredSignImage
+      });
     }
 
     const pdfBytes = await pdfDoc.save();
@@ -300,7 +324,6 @@ app.post('/api/cases/:id/sign', async (req, res) => {
       insured
     };
     item.pdfPath = `output/${pdfName}`;
-
     saveCases(cases);
 
     const downloadUrl = `${getBaseUrl(req)}/api/cases/${caseId}/download`;
