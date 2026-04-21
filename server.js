@@ -103,41 +103,39 @@ app.get('/api/cases/:id', (req, res) => {
 });
 
 app.post('/api/cases/:id/sign', async (req, res) => {
-  const cases = loadCases();
-  const item = cases[req.params.id];
-  if (!item) return res.status(404).json({ ok: false, message: '找不到案件' });
-
-  const { signerName = '', signatures = [] } = req.body;
-  if (!Array.isArray(signatures) || signatures.length === 0) {
-    return res.status(400).json({ ok: false, message: '沒有簽名資料' });
-  }
-
   try {
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const caseId = req.params.id;
+    const caseFile = path.join(dataDir, `${caseId}.json`);
 
-    for (let i = 0; i < item.pages.length; i++) {
-      const pageInfo = item.pages[i];
-      const imgPath = path.join(dataDir, pageInfo.file.replace(/^\/+/, ''));
-      const imgBytes = fs.readFileSync(imgPath);
-      const isPng = pageInfo.file.toLowerCase().endsWith('.png');
-      const image = isPng ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
-      const { width, height } = image.scale(1);
-      const page = pdfDoc.addPage([width, height]);
-      page.drawImage(image, { x: 0, y: 0, width, height });
+    if (!fs.existsSync(caseFile)) {
+      return res.status(404).json({ ok: false, message: '案件不存在' });
+    }
 
-      const signData = signatures[i];
-      if (signData && signData.dataUrl) {
-        const pngBytes = Buffer.from(signData.dataUrl.split(',')[1], 'base64');
-        const signImage = await pdfDoc.embedPng(pngBytes);
-        const signWidth = Math.min(width * 0.28, 220);
-        const signHeight = signWidth * 0.4;
-        page.drawImage(signImage, {
-          x: width - signWidth - 48,
-          y: 42,
-          width: signWidth,
-          height: signHeight
-        });
+    const caseData = JSON.parse(fs.readFileSync(caseFile, 'utf8'));
+    const payload = req.body || {};
+
+    caseData.signed = true;
+    caseData.signerName = payload.signerName || '';
+
+    caseData.signData = {
+      applicant: payload.applicant || {},
+      insured: payload.insured || {}
+    };
+
+    fs.writeFileSync(caseFile, JSON.stringify(caseData, null, 2), 'utf8');
+
+    const downloadUrl = `/api/cases/${caseId}/download`;
+
+    return res.json({
+      ok: true,
+      message: '簽署完成',
+      downloadUrl
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: '簽署失敗' });
+  }
+});
         if (signerName) {
           page.drawText(signerName, {
             x: 48,
