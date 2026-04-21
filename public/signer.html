@@ -632,7 +632,7 @@
 
         if (!data.ok) throw new Error(data.message || '送出失敗');
 
-        alert('簽署完成，PDF 已產生');
+        alert('簽署完成，PDF 已產生，下載連結：${data.downloadUrl}');
         if (data.downloadUrl) {
           location.href = data.downloadUrl;
         }
