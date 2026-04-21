@@ -228,7 +228,6 @@ app.post('/api/cases', upload.array('uploadedForms', 20), (req, res) => {
     downloadUrl: `${base}/api/cases/${caseId}/download`
   });
 });
-
 app.get('/api/cases/:id', (req, res) => {
   const cases = loadCases();
   const item = cases[req.params.id];
@@ -243,11 +242,10 @@ app.get('/api/cases/:id', (req, res) => {
     documents: item.pages.map((p, index) => ({
       index,
       title: p.title,
-      imageUrl: `/files/${p.file}`
+      imageUrl: p.isTemplate ? `/${p.file}` : `/files/${p.file}`
     }))
   });
 });
-
 app.post('/api/cases/:id/sign', async (req, res) => {
   try {
     const caseId = req.params.id;
